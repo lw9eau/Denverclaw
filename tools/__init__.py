@@ -959,7 +959,7 @@ def execute_ha_command(domain: str, service: str, entity_id: str,
     Examples (MANDATORY to pass domain, service, and entity_id):
     - Turn on light:    domain='homeassistant', service='turn_on',  entity_id='living light'
     - Turn off light:   domain='homeassistant', service='turn_off', entity_id='mezzanine light'
-    - Arm alarm:        domain='alarm_control_panel', service='alarm_arm_away', entity_id='home_alarm', service_data={'code': '1411'}
+    - Arm alarm:        domain='alarm_control_panel', service='alarm_arm_away', entity_id='home_alarm', service_data={'code': '1111'}
     """
     try:
         # Smart entity resolution: fuzzy match entity name
