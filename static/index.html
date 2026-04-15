@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Denver - Web Chat</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Marked.js for Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <!-- Highlight.js for Code Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #212121;
+        }
+
+        /* Markdown Overrides */
+        .prose pre { 
+            background-color: #1e1e1e !important; 
+            border-radius: 0.75rem; 
+            padding: 1rem; 
+            border: 1px solid #374151;
+            margin: 1rem 0;
+        }
+        .prose code { color: #f3f4f6; background-color: transparent !important; }
+        .prose table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.875rem; }
+        .prose th, .prose td { border: 1px solid #374151; padding: 0.75rem; text-align: left; }
+        .prose th { background-color: #2a2a2a; font-weight: 600; color: #e5e7eb; }
+        .prose tr:nth-child(even) { background-color: #262626; }
+        .prose p { margin-bottom: 0.75rem; }
+        .prose ul, .prose ol { margin-left: 1.5rem; margin-bottom: 0.75rem; list-style-type: disc; }
+        
+        /* Smooth scroll and scrollbar */
+        * { scrollbar-width: thin; scrollbar-color: #4b5563 transparent; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-message { animation: fadeIn 0.3s ease-out forwards; }
+
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            padding: 0.4rem;
+            border-radius: 0.5rem;
+            background-color: rgba(55, 65, 81, 0.4);
+            color: #9ca3af;
+            opacity: 0;
+            transition: all 0.2s;
+            z-index: 10;
+            cursor: pointer;
+            border: 1px solid rgba(75, 85, 99, 0.3);
+        }
+        .bubble-container:hover .copy-btn {
+            opacity: 1;
+        }
+        .copy-btn:hover {
+            background-color: rgba(75, 85, 99, 0.8);
+            color: #ffffff;
+            transform: scale(1.05);
+        }
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+        .bubble-container {
+            position: relative;
+        }
+    </style>
+</head>
+<body class="text-gray-200 h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="h-16 border-b border-gray-800 flex items-center justify-between px-6 bg-[#212121] z-20 shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform cursor-pointer">
+                <span class="text-white font-bold text-xl">D</span>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg tracking-tight">Denver <span class="text-indigo-500 font-medium text-sm ml-1">v3.0</span></h1>
+                <div class="flex items-center gap-2">
+                    <span id="connection-dot" class="w-2 h-2 rounded-full bg-red-500"></span>
+                    <span id="connection-status" class="text-[10px] uppercase font-bold tracking-widest text-gray-500">Desconectado</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-4 text-gray-400">
+            <a href="/metrics" target="_blank" title="Ver métricas" class="p-2 hover:bg-gray-800 rounded-lg transition-all hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+            </a>
+            <button id="clear-chat" title="Limpiar chat" class="p-2 hover:bg-gray-800 rounded-lg transition-all hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Chat Area -->
+    <main id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-8">
+        <div class="max-w-4xl mx-auto space-y-8" id="messages-list">
+            <!-- Initial Message -->
+            <div class="flex gap-5 animate-message">
+                <div class="shrink-0 w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-sm font-bold shadow-md">D</div>
+                <div class="flex-1 space-y-2">
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-tighter ml-1">Denver</div>
+                    <div class="bg-gray-800 rounded-2xl rounded-tl-none p-5 shadow-lg border border-gray-700/50 leading-relaxed bubble-container">
+                        <button onclick="copyMessage(this)" title="Copiar mensaje" class="copy-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                        </button>
+                        <div class="message-text">
+                            <p class="text-[15px]">¡Hola! Soy Denver, tu asistente personal. Estoy listo para ayudarte con tu automatización, agenda, búsquedas y más.</p>
+                            <p class="text-[15px] mt-2">Como estamos en la web, puedo mostrarte <b>tablas dinámicas</b>, <b>código</b> con resaltado y <b>formato enriquecido</b>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Typing indicator -->
+        <div id="typing-indicator" class="hidden flex gap-5 max-w-4xl mx-auto mt-6 animate-message">
+            <div class="shrink-0 w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-sm font-bold opacity-50">D</div>
+            <div class="bg-gray-800/50 rounded-2xl p-4 border border-gray-700/30">
+                <div class="flex gap-1.5">
+                    <div class="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"></div>
+                    <div class="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div class="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.5s]"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="p-4 md:p-6 bg-gradient-to-t from-[#212121] via-[#212121] to-transparent shrink-0">
+        <div class="max-w-4xl mx-auto">
+
+            <!-- Image preview strip -->
+            <div id="image-preview-strip" class="hidden mb-2 flex items-center gap-3 bg-[#2d2d2d] border border-gray-700 rounded-2xl px-4 py-2.5">
+                <img id="image-preview-thumb" src="" alt="preview" class="h-12 w-12 rounded-xl object-cover border border-gray-600 shadow" />
+                <span class="text-xs text-gray-400 flex-1 truncate" id="image-preview-name">imagen adjunta</span>
+                <button id="remove-image-btn" title="Quitar imagen" class="p-1.5 rounded-lg hover:bg-gray-700 text-gray-500 hover:text-white transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="relative group">
+                <div class="absolute inset-0 bg-indigo-600/5 blur-xl group-focus-within:bg-indigo-600/10 transition-colors pointer-events-none"></div>
+
+                <!-- Hidden file input -->
+                <input type="file" id="image-input" accept="image/*" class="hidden" />
+
+                <!-- Attach image button (left) -->
+                <button
+                    id="attach-btn"
+                    title="Adjuntar imagen"
+                    class="absolute left-3.5 bottom-3.5 p-2 text-gray-500 hover:text-indigo-400 hover:bg-gray-700/60 rounded-xl transition-all z-20 disabled:opacity-30 disabled:cursor-not-allowed"
+                    disabled
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
+                </button>
+
+                <textarea 
+                    id="chat-input"
+                    rows="1"
+                    placeholder="Escribe algo aquí..."
+                    class="w-full bg-[#2f2f2f] text-[15px] text-white border border-gray-700 rounded-3xl py-4 px-14 pr-14 focus:outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-600/5 resize-none overflow-hidden max-h-52 shadow-2xl transition-all relative z-10"
+                    disabled
+                ></textarea>
+
+                <button 
+                    id="send-btn"
+                    class="absolute right-3.5 bottom-3.5 p-2 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-500 transition-all disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed z-20 shadow-lg active:scale-95"
+                    disabled
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 rotate-90" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <p class="text-center text-[9px] text-gray-600 mt-4 uppercase tracking-[0.2em] font-bold">
+            Denver Web · <span class="text-indigo-900">Encadenamiento de Agentes</span> · Multimodal
+        </p>
+    </footer>
+
+    <script>
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const attachBtn = document.getElementById('attach-btn');
+        const imageInput = document.getElementById('image-input');
+        const imagePreviewStrip = document.getElementById('image-preview-strip');
+        const imagePreviewThumb = document.getElementById('image-preview-thumb');
+        const imagePreviewName = document.getElementById('image-preview-name');
+        const removeImageBtn = document.getElementById('remove-image-btn');
+        const messagesList = document.getElementById('messages-list');
+        const chatContainer = document.getElementById('chat-container');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const connectionStatus = document.getElementById('connection-status');
+        const connectionDot = document.getElementById('connection-dot');
+
+        let socket = null;
+        let threadId = null;
+        let pendingImageB64 = null;   // base64 string sin prefijo data URI
+        let currentStreamContentDiv = null;
+        let currentStreamText = "";
+
+        // Marked configuration
+        const renderer = new marked.Renderer();
+        marked.setOptions({
+            renderer: renderer,
+            highlight: function(code, lang) {
+                if (lang && hljs.getLanguage(lang)) {
+                    return hljs.highlight(code, { language: lang }).value;
+                }
+                return hljs.highlightAuto(code).value;
+            },
+            langPrefix: 'hljs language-',
+            breaks: true,
+            gfm: true
+        });
+
+        function connect() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/chat`;
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = () => {
+                connectionStatus.innerText = 'Online';
+                connectionDot.className = 'w-2 h-2 rounded-full bg-indigo-500 animate-pulse';
+                chatInput.disabled = false;
+                chatInput.placeholder = "Pregúntame lo que sea...";
+                attachBtn.disabled = false;
+                sendBtn.disabled = !chatInput.value.trim() && !pendingImageB64;
+            };
+
+            socket.onclose = () => {
+                connectionStatus.innerText = 'Desconectado';
+                connectionDot.className = 'w-2 h-2 rounded-full bg-red-500';
+                chatInput.disabled = true;
+                attachBtn.disabled = true;
+                chatInput.placeholder = "Conectando...";
+                setTimeout(connect, 3000);
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'status') {
+                    if (data.status === 'typing') {
+                        typingIndicator.classList.remove('hidden');
+                        scrollToBottom();
+                    } else if (data.thread_id) {
+                        threadId = data.thread_id;
+                    }
+                } else if (data.type === 'message') {
+                    typingIndicator.classList.add('hidden');
+                    addMessage('denver', data.text, data.image);
+                } else if (data.type === 'error') {
+                    typingIndicator.classList.add('hidden');
+                    addMessage('denver', `⚠️ **Error en el sistema:** ${data.text}`);
+                } else if (data.type === 'stream_start') {
+                    typingIndicator.classList.add('hidden');
+                    currentStreamText = "";
+                    currentStreamContentDiv = addEmptyMessage();
+                    scrollToBottom();
+                } else if (data.type === 'stream_chunk') {
+                    currentStreamText += data.chunk;
+                    if (currentStreamContentDiv) {
+                        currentStreamContentDiv.innerHTML = marked.parse(currentStreamText);
+                        currentStreamContentDiv.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
+                        scrollToBottom();
+                    }
+                } else if (data.type === 'stream_end') {
+                    if (currentStreamContentDiv) {
+                        // Si no hubo streaming (DirectRoute / AutoFinish), usar el texto final de respaldo
+                        if (!currentStreamText.trim() && data.final_text) {
+                            currentStreamText = data.final_text;
+                        }
+
+                        let imgTag = '';
+                        if (data.image) {
+                            const mime = 'image/jpeg';
+                            imgTag = `<a href="data:${mime};base64,${data.image}" target="_blank"><img src="data:${mime};base64,${data.image}" class="mt-3 rounded-xl border border-gray-600 max-w-full h-auto shadow-2xl hover:scale-[1.01] transition-transform cursor-zoom-in" /></a>`;
+                        }
+                        currentStreamContentDiv.innerHTML = marked.parse(currentStreamText) + imgTag;
+                        currentStreamContentDiv.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
+                        scrollToBottom();
+                    }
+                    currentStreamContentDiv = null;
+                    currentStreamText = "";
+                }
+            };
+        }
+
+        function scrollToBottom() {
+            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+        }
+
+        function addEmptyMessage() {
+            const div = document.createElement('div');
+            div.className = `flex gap-5 animate-message`;
+            div.innerHTML = `
+                <div class="shrink-0 w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-sm font-bold shadow-md">D</div>
+                <div class="flex-1 space-y-2">
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-tighter mx-1">Denver</div>
+                    <div class="bg-[#2f2f2f] rounded-2xl rounded-tl-none p-5 shadow-lg border border-gray-700/50 leading-relaxed text-[15px] prose prose-invert prose-indigo max-w-none text-left inline-block w-full content-container bubble-container">
+                        <button onclick="copyMessage(this)" title="Copiar mensaje" class="copy-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                        </button>
+                        <div class="message-text"></div>
+                    </div>
+                </div>
+            `;
+            messagesList.appendChild(div);
+            return div.querySelector('.message-text');
+        }
+
+        function addMessage(sender, text, imageB64 = null) {
+            const isUser = sender === 'user';
+            const div = document.createElement('div');
+            div.className = `flex gap-5 animate-message ${isUser ? 'flex-row-reverse' : ''}`;
+            const avatarColor = isUser ? 'bg-gray-700' : 'bg-indigo-600';
+            const avatarChar = isUser ? 'U' : 'D';
+            const htmlText = text ? marked.parse(text) : '';
+            const mime = 'image/jpeg';
+            const imgTag = imageB64
+                ? `<a href="data:${mime};base64,${imageB64}" target="_blank"><img src="data:${mime};base64,${imageB64}" class="mt-3 rounded-xl border border-gray-600 max-w-full h-auto shadow-2xl hover:scale-[1.01] transition-transform cursor-zoom-in" /></a>`
+                : '';
+
+            div.innerHTML = `
+                <div class="shrink-0 w-9 h-9 rounded-xl ${avatarColor} flex items-center justify-center text-sm font-bold shadow-md">${avatarChar}</div>
+                <div class="flex-1 space-y-2 ${isUser ? 'text-right' : ''}">
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-tighter mx-1">${isUser ? 'Tú' : 'Denver'}</div>
+                    <div class="bg-[#2f2f2f] rounded-2xl ${isUser ? 'rounded-tr-none bg-indigo-900/20' : 'rounded-tl-none'} p-5 shadow-lg border border-gray-700/50 leading-relaxed text-[15px] prose prose-invert prose-indigo max-w-none text-left inline-block w-full bubble-container">
+                        <button onclick="copyMessage(this)" title="Copiar mensaje" class="copy-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                        </button>
+                        <div class="message-text">
+                            ${htmlText}${imgTag}
+                        </div>
+                    </div>
+                </div>
+            `;
+            messagesList.appendChild(div);
+            div.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
+            scrollToBottom();
+        }
+
+        async function copyMessage(btn) {
+            const container = btn.closest('.bubble-container');
+            const textContent = container.querySelector('.message-text');
+            const textToCopy = textContent.innerText;
+
+            const showSuccess = () => {
+                const originalSVG = btn.innerHTML;
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+                btn.classList.add('text-green-400');
+                setTimeout(() => {
+                    btn.innerHTML = originalSVG;
+                    btn.classList.remove('text-green-400');
+                }, 2000);
+            };
+
+            const showError = () => {
+                btn.classList.add('text-red-500', 'animate-pulse');
+                setTimeout(() => {
+                    btn.classList.remove('text-red-500', 'animate-pulse');
+                }, 2000);
+            };
+
+            try {
+                // Modo 1: API Moderna (requiere HTTPS/localhost + foco)
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(textToCopy);
+                    showSuccess();
+                } else {
+                    throw new Error('Clipboard API no disponible o contexto no seguro');
+                }
+            } catch (err) {
+                // Modo 2: Fallback (textarea invisible)
+                try {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = textToCopy;
+                    textArea.style.position = "fixed";
+                    textArea.style.left = "-9999px";
+                    textArea.style.top = "0";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    if (successful) {
+                        showSuccess();
+                    } else {
+                        showError();
+                    }
+                } catch (fallbackErr) {
+                    console.error('Error total al copiar: ', fallbackErr);
+                    showError();
+                }
+            }
+        }
+
+        // ── Image selection ──────────────────────────────────────────────────────
+        attachBtn.addEventListener('click', () => imageInput.click());
+
+        imageInput.addEventListener('change', () => {
+            const file = imageInput.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const fullB64 = e.target.result; // data:image/jpeg;base64,xxxx
+                pendingImageB64 = fullB64.split(',')[1];
+                imagePreviewThumb.src = fullB64;
+                imagePreviewName.textContent = file.name;
+                imagePreviewStrip.classList.remove('hidden');
+                sendBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+            imageInput.value = ''; // permite re-seleccionar el mismo archivo
+        });
+
+        removeImageBtn.addEventListener('click', () => {
+            pendingImageB64 = null;
+            imagePreviewStrip.classList.add('hidden');
+            imagePreviewThumb.src = '';
+            sendBtn.disabled = !chatInput.value.trim();
+        });
+
+        // ── Send message ─────────────────────────────────────────────────────────
+        function sendMessage() {
+            const text = chatInput.value.trim();
+            if ((!text && !pendingImageB64) || !socket || socket.readyState !== WebSocket.OPEN) return;
+
+            // Mostrar el mensaje del usuario (con thumbnail si hay imagen)
+            addMessage('user', text, pendingImageB64);
+
+            const payload = { text: text || 'Analizá esta imagen.' };
+            if (pendingImageB64) payload.image = pendingImageB64;
+            socket.send(JSON.stringify(payload));
+
+            // Reset
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+            pendingImageB64 = null;
+            imagePreviewStrip.classList.add('hidden');
+            imagePreviewThumb.src = '';
+            sendBtn.disabled = true;
+        }
+
+        chatInput.addEventListener('input', () => {
+            chatInput.style.height = 'auto';
+            chatInput.style.height = chatInput.scrollHeight + 'px';
+            sendBtn.disabled = !chatInput.value.trim() && !pendingImageB64;
+        });
+
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        sendBtn.addEventListener('click', sendMessage);
+
+        document.getElementById('clear-chat').addEventListener('click', () => {
+            if (confirm('¿Deseas vaciar la conversación de esta sesión?')) {
+                messagesList.innerHTML = '';
+                addMessage('denver', 'Historial limpio. ¿Cómo puedo ayudarte ahora?');
+            }
+        });
+
+        connect();
+    </script>
+</body>
+</html>

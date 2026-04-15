@@ -1,0 +1,41 @@
+# Environment
+.env
+
+# Database
+denver.db
+checkpoints.sqlite
+
+# Storage
+denver_storage/
+
+# Google OAuth
+token.json
+credentials.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temp
+/tmp/
+*.ogg
