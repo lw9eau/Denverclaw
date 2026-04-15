@@ -12,7 +12,7 @@ Denverclaw es un asistente personal altamente avanzado basado en agentes de IA, 
 - **Interfaz Multimodal**:
   - **Telegram**: Chatbot interactivo con soporte para fotos y voz.
   - **Web Chat**: Interfaz moderna con streaming de respuestas.
-  - **Voice**: Servidor dedicado para interacción por voz.
+  - **Voice**: Servidor dedicado para interacción por voz. Consulta [Denverclaw_Voice](https://github.com/lw9eau/Denverclaw_Voice) para la implementación con Atom Echo Client.
 - **Visión Artificial**: Análisis detallado de capturas de cámaras de seguridad o fotos enviadas por el usuario.
 - **Briefing Matutino**: Resumen automático del día (clima, eventos de calendario, correos pendientes).
 
@@ -59,7 +59,7 @@ Puedes iniciar los diferentes servidores según tus necesidades:
 
 - **Web Server**: `python web_server.py`
 - **Telegram Server**: `python telegram_server.py`
-- **Voice Server**: `python voice_server.py`
+- **Voice Server**: `python voice_server.py` (Consulta [Denverclaw_Voice](https://github.com/lw9eau/Denverclaw_Voice) para la configuración del cliente).
 
 ## 📂 Estructura del Proyecto
 
