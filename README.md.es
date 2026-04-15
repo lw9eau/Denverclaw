@@ -55,11 +55,17 @@ Denverclaw es un asistente personal altamente avanzado basado en agentes de IA, 
 
 ## 🏃 Ejecución
 
-Puedes iniciar los diferentes servidores según tus necesidades:
+Puedes iniciar el ecosistema usando el punto de entrada unificado `run.py`.
 
-- **Web Server**: `python web_server.py`
-- **Telegram Server**: `python telegram_server.py`
-- **Voice Server**: `python voice_server.py` (Consulta [Denverclaw_Voice](https://github.com/lw9eau/Denverclaw_Voice) para la configuración del cliente).
+```bash
+python run.py [opciones]
+```
+
+**Parámetros:**
+- `--all`: Inicia todos los servidores disponibles (por defecto si no se proporcionan parámetros).
+- `--telegram`: Inicia el servidor de Telegram.
+- `--web`: Inicia el servidor Web.
+- `--voice`: Inicia el servidor de Voz (Consulta [Denverclaw_Voice](https://github.com/lw9eau/Denverclaw_Voice) para la configuración del cliente).
 
 ## 📂 Estructura del Proyecto
 
